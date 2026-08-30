@@ -2,6 +2,7 @@ window.Sim = window.Sim || {};
 
 Sim.Menu = (function () {
   const STORAGE_KEY = 'fahrsim_progress';
+  const CHALLENGE_KEY = 'fahrsim_challenge_best';
   const NUM_LEVELS = Sim.Levels.LEVELS.length;
 
   function loadProgress() {
@@ -33,13 +34,69 @@ Sim.Menu = (function () {
     return progress;
   }
 
-  function renderMenu(container, onSelect) {
+  function loadChallengeBests() {
+    try {
+      const raw = localStorage.getItem(CHALLENGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function getChallengeBest(levelId) {
+    return loadChallengeBests()[levelId] || null;
+  }
+
+  // A result is "better" with fewer collisions; ties broken by faster time.
+  function isBetterResult(candidate, best) {
+    if (!best) return true;
+    if (candidate.collisions !== best.collisions) return candidate.collisions < best.collisions;
+    return candidate.timeMs < best.timeMs;
+  }
+
+  // Returns { isNewBest, best } — best is the stored result after this call.
+  function recordChallengeResult(levelId, collisions, timeMs) {
+    const bests = loadChallengeBests();
+    const candidate = { collisions, timeMs };
+    const current = bests[levelId] || null;
+    const isNewBest = isBetterResult(candidate, current);
+    if (isNewBest) {
+      bests[levelId] = candidate;
+      localStorage.setItem(CHALLENGE_KEY, JSON.stringify(bests));
+    }
+    return { isNewBest, best: bests[levelId] };
+  }
+
+  function formatChallengeBest(best) {
+    return `Best: ${(best.timeMs / 1000).toFixed(1)}s · ${best.collisions} 💥`;
+  }
+
+  function renderMenu(container, { mode, onSelectLevel, onModeChange }) {
     const progress = loadProgress();
     container.innerHTML = '';
 
     const heading = document.createElement('h1');
     heading.textContent = 'Parking Practice';
     container.appendChild(heading);
+
+    const modeToggle = document.createElement('div');
+    modeToggle.className = 'mode-toggle';
+    [['practice', 'Practice'], ['challenge', 'Challenge']].forEach(([value, label]) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.className = 'mode-toggle-btn' + (mode === value ? ' active' : '');
+      btn.addEventListener('click', () => onModeChange(value));
+      modeToggle.appendChild(btn);
+    });
+    container.appendChild(modeToggle);
+
+    const hint = document.createElement('p');
+    hint.className = 'mode-hint';
+    hint.textContent = mode === 'challenge'
+      ? 'Beat your best time with the fewest collisions — a collision resets you in place and keeps the clock running.'
+      : 'Learn each maneuver at your own pace.';
+    container.appendChild(hint);
 
     const grid = document.createElement('div');
     grid.className = 'level-grid';
@@ -62,14 +119,21 @@ Sim.Menu = (function () {
 
       const status = document.createElement('div');
       status.className = 'level-status';
-      status.textContent = !unlocked ? 'Locked' : completed ? 'Completed ✓' : 'Ready';
+      if (!unlocked) {
+        status.textContent = 'Locked';
+      } else if (mode === 'challenge') {
+        const best = getChallengeBest(level.id);
+        status.textContent = best ? formatChallengeBest(best) : 'No time yet';
+      } else {
+        status.textContent = completed ? 'Completed ✓' : 'Ready';
+      }
 
       tile.appendChild(num);
       tile.appendChild(title);
       tile.appendChild(status);
 
       if (unlocked) {
-        tile.addEventListener('click', () => onSelect(level.id));
+        tile.addEventListener('click', () => onSelectLevel(level.id));
       }
 
       grid.appendChild(tile);
@@ -78,5 +142,8 @@ Sim.Menu = (function () {
     container.appendChild(grid);
   }
 
-  return { loadProgress, saveProgress, isUnlocked, markCompleted, renderMenu };
+  return {
+    loadProgress, saveProgress, isUnlocked, markCompleted, renderMenu,
+    getChallengeBest, recordChallengeResult,
+  };
 })();

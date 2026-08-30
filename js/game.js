@@ -4,7 +4,7 @@ Sim.Game = (function () {
   const C = Sim.Constants;
 
   let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl;
-  let outcomeModalEl, outcomeBackdropEl, outcomeBubbleEl, outcomePhotoEl, outcomeMessageEl, outcomeActionsEl;
+  let outcomeModalEl, outcomeBackdropEl, outcomeBubbleEl, outcomePhotoEl, outcomeMessageEl, outcomeStatsEl, outcomeActionsEl;
   let screen = 'menu'; // 'menu' | 'game'
   let currentLevel = null;
   let carState = null;
@@ -12,6 +12,9 @@ Sim.Game = (function () {
   let lastTimestamp = null;
   let viewMode = 'driver'; // 'topdown' | 'driver' — persists across level loads within the session
   let celebrationPhotoIndex = 0;
+  let gameMode = 'practice'; // 'practice' | 'challenge' — chosen in the menu, applies to the next level loaded
+  let challengeStats = null; // { collisions, startTime } while a challenge attempt is running, else null
+  let collisionFlashUntil = 0; // performance.now() timestamp; HUD shows a brief collision notice until then
   const MOBILE_QUERY = window.matchMedia('(pointer: coarse)');
 
   // On touch devices the canvas fills the actual viewport (see the CSS
@@ -64,7 +67,12 @@ Sim.Game = (function () {
     screen = 'menu';
     gameScreen.classList.add('hidden');
     menuScreen.classList.remove('hidden');
-    Sim.Menu.renderMenu(menuScreen, loadLevel);
+    Sim.Menu.renderMenu(menuScreen, { mode: gameMode, onSelectLevel: loadLevel, onModeChange: handleModeChange });
+  }
+
+  function handleModeChange(newMode) {
+    gameMode = newMode;
+    showMenu();
   }
 
   function showGame() {
@@ -81,6 +89,8 @@ Sim.Game = (function () {
     Sim.Input.reset();
     Sim.Confetti.clear();
     hideOutcomeModal();
+    challengeStats = gameMode === 'challenge' ? { collisions: 0, startTime: performance.now() } : null;
+    collisionFlashUntil = 0;
     showGame();
   }
 
@@ -97,7 +107,7 @@ Sim.Game = (function () {
     return btn;
   }
 
-  function showOutcomeModal(kind) {
+  function showOutcomeModal(kind, challengeResult) {
     outcomeActionsEl.innerHTML = '';
     // Success keeps the confetti visible behind the modal instead of dimming
     // it along with everything else like collision does.
@@ -105,6 +115,7 @@ Sim.Game = (function () {
     if (kind === 'collision') {
       outcomeBubbleEl.classList.add('hidden');
       outcomePhotoEl.classList.add('hidden');
+      outcomeStatsEl.classList.add('hidden');
       outcomeMessageEl.textContent = '💥 Collision!';
       outcomeActionsEl.appendChild(makeOutcomeButton('Retry', resetLevel));
       outcomeActionsEl.appendChild(makeOutcomeButton('Back to Menu', showMenu, true));
@@ -114,6 +125,17 @@ Sim.Game = (function () {
       outcomePhotoEl.classList.remove('hidden');
       const hasNext = currentLevel.id < Sim.Levels.LEVELS.length;
       outcomeMessageEl.textContent = hasNext ? '🎉 Parked!' : "🎉 Parked! You've completed every level!";
+
+      if (challengeResult) {
+        const seconds = (challengeResult.timeMs / 1000).toFixed(1);
+        outcomeStatsEl.textContent = `⏱ ${seconds}s   💥 ${challengeResult.collisions}` +
+          (challengeResult.isNewBest ? '  🏆 New Best!' : '');
+        outcomeStatsEl.classList.toggle('new-best', challengeResult.isNewBest);
+        outcomeStatsEl.classList.remove('hidden');
+      } else {
+        outcomeStatsEl.classList.add('hidden');
+      }
+
       if (hasNext) {
         outcomeActionsEl.appendChild(makeOutcomeButton('Next Level →', () => loadLevel(currentLevel.id + 1)));
       }
@@ -134,7 +156,14 @@ Sim.Game = (function () {
       Sim.Menu.markCompleted(currentLevel.id);
       celebrationPhotoIndex = Math.floor(Math.random() * Sim.Render.getCelebrationPhotoCount());
       Sim.Confetti.spawn();
-      showOutcomeModal('success');
+
+      let challengeResult = null;
+      if (challengeStats) {
+        const timeMs = performance.now() - challengeStats.startTime;
+        const { isNewBest, best } = Sim.Menu.recordChallengeResult(currentLevel.id, challengeStats.collisions, timeMs);
+        challengeResult = { timeMs, collisions: challengeStats.collisions, isNewBest, best };
+      }
+      showOutcomeModal('success', challengeResult);
     }
   }
 
@@ -158,9 +187,21 @@ Sim.Game = (function () {
     const obstacles = currentLevel.obstacleCars.concat(currentLevel.walls);
     const hit = obstacles.some((o) => Sim.Collision.intersects(playerRect, o));
     if (hit) {
-      gameState = 'COLLIDED_FAIL';
-      carState.v = 0;
-      showOutcomeModal('collision');
+      if (challengeStats) {
+        // Same hard-stop physics — the car still fully stops on contact —
+        // but instead of a blocking modal, challenge mode counts the hit and
+        // puts the car back at the start pose immediately, clock still
+        // running. Input state is deliberately left alone: if the player is
+        // still holding the pedal through the crash, the car should just
+        // keep going on the next attempt without them having to re-press it.
+        challengeStats.collisions++;
+        collisionFlashUntil = performance.now() + 1200;
+        carState = Sim.Physics.createCarState(currentLevel.startPose);
+      } else {
+        gameState = 'COLLIDED_FAIL';
+        carState.v = 0;
+        showOutcomeModal('collision');
+      }
     }
   }
 
@@ -172,6 +213,15 @@ Sim.Game = (function () {
       `Speed: ${speedKmh.toFixed(1)} km/h${carState.v < 0 ? ' (reverse)' : ''}`,
       `Steering: ${steerDeg}°`,
     ];
+
+    if (challengeStats) {
+      const elapsedS = (performance.now() - challengeStats.startTime) / 1000;
+      lines.push(`⏱ ${elapsedS.toFixed(1)}s   💥 ${challengeStats.collisions}`);
+      if (performance.now() < collisionFlashUntil) {
+        lines.push('💥 Collision! Back to the start...');
+      }
+    }
+
     if (gameState === 'DRIVING' && isStopped(carState) && isAligned(carState, currentLevel)) {
       lines.push('Aligned — confirm to park');
     }
@@ -218,6 +268,7 @@ Sim.Game = (function () {
     outcomeBubbleEl = document.getElementById('outcome-bubble');
     outcomePhotoEl = document.getElementById('outcome-photo');
     outcomeMessageEl = document.getElementById('outcome-message');
+    outcomeStatsEl = document.getElementById('outcome-stats');
     outcomeActionsEl = document.getElementById('outcome-actions');
 
     document.getElementById('back-to-menu').addEventListener('click', showMenu);
