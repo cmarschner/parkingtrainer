@@ -122,24 +122,79 @@ expected, not a bug to fix.
 - Position tolerance: **0.35 m** (car center vs target space center).
 - Heading tolerance: **8°**.
 - "Stopped": `|v| ≤ 0.05 m/s`.
-- A collision is a **hard stop + fail** (`COLLIDED_FAIL` state) — velocity
-  zeroed, further input ignored until reset. Not a soft bump, not silent.
+- A collision is a **hard stop** — the physics never soft-bumps or lets the
+  car pass through. In **Practice mode** that's also a fail (`COLLIDED_FAIL`
+  state) — velocity zeroed, further input ignored until reset. **Challenge
+  mode** keeps the identical hard-stop physics but doesn't fail the attempt —
+  see "Game modes" below.
 - Parking only counts on an explicit confirm (Enter key, or the on-screen
   "Park" button) while stopped **and** aligned — never auto-completes just by
   being in tolerance.
 - `R` key / on-screen "Reset" button retries from the level's start pose at
   any time.
-- Both outcomes (collision, success) open `#outcome-modal` (see `game.js`'s
-  `showOutcomeModal(kind)`), a DOM dialog, not canvas-drawn text — it must work
-  identically on desktop and mobile without platform-specific wording (no
-  "press R"/"press Enter" — phones have neither key). Collision: message +
-  "Retry" (calls `resetLevel()`) + "Back to Menu". Success: message + "Next
-  Level →" (`loadLevel(currentLevel.id + 1)`, only shown when
-  `currentLevel.id < Sim.Levels.LEVELS.length`) + "Replay" + "Back to Menu".
-  `loadLevel()` always calls `hideOutcomeModal()` first, so every path back
-  into `DRIVING` closes it. `#outcome-modal` is `position: fixed`, which is
-  what lets one implementation center correctly over both the mobile
+- Practice-mode outcomes (collision, success) open `#outcome-modal` (see
+  `game.js`'s `showOutcomeModal(kind)`), a DOM dialog, not canvas-drawn text —
+  it must work identically on desktop and mobile without platform-specific
+  wording (no "press R"/"press Enter" — phones have neither key). Collision:
+  message + "Retry" (calls `resetLevel()`) + "Back to Menu". Success: message
+  + "Next Level →" (`loadLevel(currentLevel.id + 1, {continuing:true})`, only
+  shown when `currentLevel.id < Sim.Levels.LEVELS.length`) + "Replay" + "Back
+  to Menu". `loadLevel()` always calls `hideOutcomeModal()` first, so every
+  path back into `DRIVING` closes it. `#outcome-modal` is `position: fixed`,
+  which is what lets one implementation center correctly over both the mobile
   fullscreen layout and the desktop card layout with no separate CSS.
+
+## Game modes: Practice vs Challenge
+
+Menu has a **Practice / Challenge** toggle (`.mode-toggle` in `menu.js`,
+`game.js`'s `gameMode`, defaults to `practice`). Physics are **identical**
+either way — the only difference is what happens on collision and at level
+completion:
+
+- **Practice**: as described above — collision opens the modal and blocks
+  until Retry/Back to Menu.
+- **Challenge**: collision increments a counter (`challengeStats.collisions`)
+  and immediately resets the car to the start pose **without** showing the
+  modal or touching `Sim.Input` state — deliberately, so a still-held pedal
+  keeps the car moving on the next attempt with zero friction. The clock
+  (`challengeStats.startTime`, `performance.now()`-based) keeps running. A
+  live `⏱ Xs  💥 N` readout appears in the HUD (`buildHud()` in `game.js`),
+  plus a brief "Collision! Back to the start..." flash line for ~1.2s
+  (`collisionFlashUntil`).
+- On parking successfully in Challenge mode, the clock stops and the result
+  (time, collisions) is compared against a per-level best in localStorage
+  (`fahrsim_challenge_best`, via `Sim.Menu.recordChallengeResult` /
+  `getChallengeBest` in `menu.js`) — **fewer collisions wins; ties broken by
+  faster time** (`isBetterResult`). The outcome modal shows the result plus
+  "🏆 New Best!" when it improves. Level tiles show the saved best
+  ("Best: 8.4s · 0 💥") instead of the Practice completion status when
+  Challenge mode is selected in the menu.
+- Completing a level unlocks the next one regardless of which mode it was
+  completed in (`Sim.Menu.markCompleted` is mode-agnostic, unchanged from
+  before Challenge mode existed).
+- **Whole-run tracking** (`runStats` in `game.js`): a separate accumulator
+  sums time/collisions across an *unbroken* Challenge run from level 1
+  through the last level, advanced only by clicking "Next Level" — loading
+  level 1 fresh (menu click or replay) always resets it to zero; loading any
+  other level *without* the internal `{continuing:true}` flag (i.e. not via
+  "Next Level") sets it to `null`, invalidating the whole-run total. This is
+  what gates the share offer below — sharing "I beat every level" should only
+  be possible when that's actually true. A same-level Reset mid-run also
+  invalidates it (simplest rule to reason about: any deviation from the
+  straight 1→2→…→N "Next Level" chain breaks the run).
+
+## Sharing on completion
+
+When the **last** level is parked in Challenge mode with an intact `runStats`
+(see above), the outcome modal adds a share option using the summed
+time/collisions across the whole run (`buildShareText`/`buildShareControls`
+in `game.js`). Tries the Web Share API first (`navigator.share` — opens the
+OS's native share sheet, where X/Facebook/WhatsApp/etc. appear if installed;
+supported by most mobile browsers) and falls back to three direct
+share-intent links (X, Facebook, WhatsApp) for browsers without it, mostly
+desktop. The share link is the live GitHub Pages URL, hardcoded as
+`SHARE_URL` in `game.js` — **update this constant if the deployment URL ever
+changes** (e.g. another repo/org rename).
 
 ## Views: top-down vs driver (ego)
 
