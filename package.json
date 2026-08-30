@@ -1,0 +1,8 @@
+{
+  "name": "parking-trainer",
+  "private": true,
+  "description": "Static top-down car parking learning simulator. No build step, no dependencies.",
+  "scripts": {
+    "test": "node tests/sim.test.js"
+  }
+}
