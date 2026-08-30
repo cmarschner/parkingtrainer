@@ -1,4 +1,4 @@
-# Parking Trainer — Requirements & Design Reference
+# Parking Practice — Requirements & Design Reference
 
 Reference doc for future sessions. Captures decisions made across the project's
 history that aren't otherwise obvious from reading the code cold. Keep this in

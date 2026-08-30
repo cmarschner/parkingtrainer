@@ -1,5 +1,5 @@
 {
-  "name": "parking-trainer",
+  "name": "parking-practice",
   "private": true,
   "description": "Static top-down car parking learning simulator. No build step, no dependencies.",
   "scripts": {

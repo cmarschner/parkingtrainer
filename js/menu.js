@@ -38,7 +38,7 @@ Sim.Menu = (function () {
     container.innerHTML = '';
 
     const heading = document.createElement('h1');
-    heading.textContent = 'Parking Trainer';
+    heading.textContent = 'Parking Practice';
     container.appendChild(heading);
 
     const grid = document.createElement('div');
