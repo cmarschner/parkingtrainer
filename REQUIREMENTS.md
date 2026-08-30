@@ -168,10 +168,12 @@ originally; moved per explicit request).
 ## Celebration on success
 
 Confetti (screen-space particle system, `confetti.js`, canvas-drawn since it's
-animated) + a random photo from `pics/` shown inside the outcome modal itself
+animated) + a random photo from `pics/` and a "Well done!" speech bubble
+(`#outcome-bubble` — a plain rounded box with a CSS `::after` triangle
+pointer, not a canvas path) shown inside the outcome modal itself
 (`<img id="outcome-photo">`, set via `Sim.Render.getCelebrationPhotoSrc(index)`
-in `showOutcomeModal('success')`) — **not** drawn on the canvas. It used to be
-a canvas-drawn photo+speech-bubble in a fixed corner (`drawCelebration()`),
+in `showOutcomeModal('success')`) — **not** drawn on the canvas. Both used to
+be canvas-drawn in a fixed corner (`drawCelebration()`/`drawSpeechBubble()`),
 but that overlay competed for screen space with the separate DOM modal
 overlay and lost on small screens (the modal's panel is tall enough on
 mobile to cover a fixed-position canvas photo). Moving the photo into the
