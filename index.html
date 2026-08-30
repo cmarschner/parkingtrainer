@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Parking Trainer</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -11,11 +12,26 @@
 
 <div id="game-screen" class="hidden">
   <div id="game-toolbar">
-    <button id="back-to-menu">← Back to Menu</button>
+    <button id="back-to-menu">← Menu</button>
     <div id="controls-hint">Arrows: drive / steer &nbsp;·&nbsp; Enter: confirm parked &nbsp;·&nbsp; R: reset &nbsp;·&nbsp; V: toggle view</div>
-    <button id="toggle-view">View: Driver (V)</button>
+    <div class="toolbar-actions">
+      <button id="btn-park">Park ⏎</button>
+      <button id="btn-reset">Reset ⟲</button>
+      <button id="toggle-view">View: Driver (V)</button>
+    </div>
   </div>
+
   <canvas id="canvas" width="1000" height="700"></canvas>
+
+  <div id="touch-controls">
+    <div id="wheel-widget" class="touch-widget" role="slider" aria-label="Steering">
+      <div id="wheel-thumb" class="wheel-thumb"></div>
+    </div>
+    <div id="pedal-widget" class="touch-widget" role="slider" aria-label="Throttle and brake">
+      <div class="pedal-track"></div>
+      <div id="pedal-thumb" class="pedal-thumb"></div>
+    </div>
+  </div>
 </div>
 
 <script src="js/constants.js"></script>
@@ -26,6 +42,7 @@
 <script src="js/render.js"></script>
 <script src="js/confetti.js"></script>
 <script src="js/input.js"></script>
+<script src="js/touchcontrols.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/game.js"></script>
 </body>

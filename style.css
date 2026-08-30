@@ -1,4 +1,8 @@
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  overscroll-behavior: none;
+}
 
 body {
   margin: 0;
@@ -6,6 +10,14 @@ body {
   background: #1b1f24;
   color: #eaeaea;
   min-height: 100vh;
+  min-height: 100dvh;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+button {
+  touch-action: manipulation; /* removes the ~300ms tap delay and double-tap-zoom on mobile */
 }
 
 .hidden { display: none !important; }
@@ -36,6 +48,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 24px 12px;
+  min-width: 0; /* let the grid track shrink below the title text's min-content width */
   background: #262b33;
   border: 2px solid #3a4048;
   border-radius: 10px;
@@ -67,6 +80,13 @@ body {
 .level-title {
   font-size: 15px;
   text-align: center;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 480px) {
+  .level-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .level-status {
@@ -94,17 +114,25 @@ body {
   margin-bottom: 10px;
 }
 
-#back-to-menu, #toggle-view {
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#back-to-menu, .toolbar-actions button {
   background: #262b33;
   border: 1px solid #3a4048;
   color: #eaeaea;
-  padding: 8px 14px;
+  padding: 10px 14px;
+  min-height: 44px; /* comfortable tap target */
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
+  font-size: 14px;
 }
 
-#back-to-menu:hover, #toggle-view:hover {
+#back-to-menu:hover, .toolbar-actions button:hover {
   border-color: #2f6fed;
 }
 
@@ -118,4 +146,110 @@ body {
   border-radius: 8px;
   max-width: 100%;
   height: auto;
+  touch-action: none;
+}
+
+/* Touch controls: steering wheel (left) and forward/backward pedal (right).
+   Hidden by default — only shown on devices whose primary input is a coarse
+   pointer (touchscreens), so desktop/mouse layout is completely unaffected. */
+#touch-controls {
+  display: none;
+  width: 1000px;
+  max-width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding: 0 10px;
+  user-select: none;
+}
+
+.touch-widget {
+  touch-action: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#wheel-widget {
+  width: 130px;
+  height: 130px;
+}
+
+.wheel-thumb {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 8px solid #e8e8e8;
+  background: rgba(232, 232, 232, 0.08);
+  position: relative;
+}
+
+.wheel-thumb::before, .wheel-thumb::after {
+  content: '';
+  position: absolute;
+  background: #e8e8e8;
+  border-radius: 3px;
+}
+
+.wheel-thumb::before {
+  left: 6px;
+  right: 6px;
+  top: 50%;
+  height: 6px;
+  transform: translateY(-50%);
+}
+
+.wheel-thumb::after {
+  top: 6px;
+  bottom: 6px;
+  left: 50%;
+  width: 6px;
+  transform: translateX(-50%);
+}
+
+#pedal-widget {
+  width: 84px;
+  height: 170px;
+}
+
+.pedal-track {
+  position: absolute;
+  width: 16px;
+  height: 150px;
+  border-radius: 8px;
+  background: rgba(232, 232, 232, 0.12);
+  border: 2px solid #3a4048;
+}
+
+.pedal-track::before, .pedal-track::after {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #9aa4b2;
+  font-size: 14px;
+}
+
+.pedal-track::before { content: '▲'; top: -22px; }
+.pedal-track::after { content: '▼'; bottom: -22px; }
+
+.pedal-thumb {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #2f6fed;
+  border: 3px solid #e8e8e8;
+}
+
+/* Phones/tablets: primary input is touch, so show the on-screen controls
+   and drop the keyboard-only hint text that no longer applies. */
+@media (pointer: coarse) {
+  #controls-hint {
+    display: none;
+  }
+
+  #touch-controls {
+    display: flex;
+  }
 }

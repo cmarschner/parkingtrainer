@@ -147,11 +147,14 @@ Sim.Game = (function () {
     ctx = canvas.getContext('2d');
 
     document.getElementById('back-to-menu').addEventListener('click', showMenu);
+    document.getElementById('btn-park').addEventListener('click', handleEnter);
+    document.getElementById('btn-reset').addEventListener('click', handleReset);
 
     viewToggleBtn = document.getElementById('toggle-view');
     viewToggleBtn.addEventListener('click', toggleViewMode);
 
     Sim.Input.init({ onEnter: handleEnter, onReset: handleReset, onToggleView: toggleViewMode });
+    Sim.TouchControls.init();
 
     showMenu();
     requestAnimationFrame(loop);
