@@ -4,7 +4,7 @@ Sim.Game = (function () {
   const C = Sim.Constants;
 
   let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl;
-  let outcomeModalEl, outcomeBackdropEl, outcomeMessageEl, outcomeActionsEl;
+  let outcomeModalEl, outcomeBackdropEl, outcomePhotoEl, outcomeMessageEl, outcomeActionsEl;
   let screen = 'menu'; // 'menu' | 'game'
   let currentLevel = null;
   let carState = null;
@@ -99,14 +99,17 @@ Sim.Game = (function () {
 
   function showOutcomeModal(kind) {
     outcomeActionsEl.innerHTML = '';
-    // Success keeps the confetti/celebration photo visible behind the modal
-    // instead of dimming them along with everything else like collision does.
+    // Success keeps the confetti visible behind the modal instead of dimming
+    // it along with everything else like collision does.
     outcomeBackdropEl.classList.toggle('celebrate', kind === 'success');
     if (kind === 'collision') {
+      outcomePhotoEl.classList.add('hidden');
       outcomeMessageEl.textContent = '💥 Collision!';
       outcomeActionsEl.appendChild(makeOutcomeButton('Retry', resetLevel));
       outcomeActionsEl.appendChild(makeOutcomeButton('Back to Menu', showMenu, true));
     } else {
+      outcomePhotoEl.src = Sim.Render.getCelebrationPhotoSrc(celebrationPhotoIndex);
+      outcomePhotoEl.classList.remove('hidden');
       const hasNext = currentLevel.id < Sim.Levels.LEVELS.length;
       outcomeMessageEl.textContent = hasNext ? '🎉 Parked!' : "🎉 Parked! You've completed every level!";
       if (hasNext) {
@@ -176,7 +179,7 @@ Sim.Game = (function () {
     // guessing a constant — stays correct regardless of text-size settings.
     const topInset = MOBILE_QUERY.matches ? gameToolbarEl.getBoundingClientRect().height + 8 : 12;
 
-    return { lines, celebrate: gameState === 'PARKED_SUCCESS', photoIndex: celebrationPhotoIndex, topInset };
+    return { lines, topInset };
   }
 
   function render() {
@@ -210,6 +213,7 @@ Sim.Game = (function () {
 
     outcomeModalEl = document.getElementById('outcome-modal');
     outcomeBackdropEl = document.getElementById('outcome-backdrop');
+    outcomePhotoEl = document.getElementById('outcome-photo');
     outcomeMessageEl = document.getElementById('outcome-message');
     outcomeActionsEl = document.getElementById('outcome-actions');
 

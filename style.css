@@ -296,6 +296,16 @@ button {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
+#outcome-photo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #ffd23f;
+  margin: 0 auto 16px;
+}
+
 #outcome-message {
   font-size: 22px;
   font-weight: 700;

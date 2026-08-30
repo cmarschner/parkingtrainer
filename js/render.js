@@ -9,15 +9,19 @@ Sim.Render = (function () {
     'pics/delfin.png', 'pics/niedzwiecz.png', 'pics/bangchan.png',
     'pics/bart.png', 'pics/irena.png', 'pics/phile.png', 'pics/sungmin.png',
   ];
-  const celebrationPhotos = CELEBRATION_PHOTO_SOURCES.map((src) => {
-    const entry = { img: new Image(), loaded: false };
-    entry.img.onload = () => { entry.loaded = true; };
-    entry.img.src = src;
-    return entry;
-  });
+  // Preloaded purely to warm the browser cache — the actual <img> lives in
+  // the DOM outcome modal (game.js), which sets its src at show time.
+  CELEBRATION_PHOTO_SOURCES.forEach((src) => { new Image().src = src; });
 
   function getCelebrationPhotoCount() {
-    return celebrationPhotos.length;
+    return CELEBRATION_PHOTO_SOURCES.length;
+  }
+
+  // The photo itself lives in the DOM outcome modal (game.js), not drawn on
+  // the canvas — this just hands out the src (the preloading above still
+  // warms the browser cache so it appears instantly) and picks which one.
+  function getCelebrationPhotoSrc(index) {
+    return CELEBRATION_PHOTO_SOURCES[index];
   }
 
   // A camera is an anchor point (world meters) plus a rotation (radians) applied
@@ -169,82 +173,11 @@ Sim.Render = (function () {
     drawTirePaths(ctx, camera, level, state);
 
     drawHud(ctx, hud);
-    drawCelebration(ctx, hud);
   }
 
-  function drawSpeechBubble(ctx, x, y, w, h, pointerX, pointerY) {
-    const r = 10;
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + w * 0.65, y + h);
-    ctx.lineTo(pointerX, pointerY);
-    ctx.lineTo(x + w * 0.45, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.strokeStyle = '#1a1a1a';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-
-  // Photo + "Well done!" speech bubble shown while the level is in the parked-success state.
-  function drawCelebration(ctx, hud) {
-    if (!hud.celebrate) return;
-
-    const size = 140, margin = 20;
-    // Pushed further down when a floating toolbar (mobile) eats into the top of the canvas.
-    const extraTopClearance = Math.max(0, (hud.topInset ?? 12) - 12);
-    const cx = C.CANVAS_WIDTH - margin - size / 2;
-    const cy = margin + size + extraTopClearance; // photo + bubble pulled down by size/2 so the bubble stays on-screen
-
-    const text = 'Well done!';
-    ctx.save();
-    ctx.font = 'bold 20px sans-serif';
-    const bubbleW = ctx.measureText(text).width + 32;
-    const bubbleH = 44;
-    const bubbleX = cx - bubbleW / 2;
-    const bubbleY = cy - size / 2 - bubbleH - 14;
-
-    drawSpeechBubble(ctx, bubbleX, bubbleY, bubbleW, bubbleH, cx, cy - size / 2);
-    ctx.fillStyle = '#1a1a1a';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, bubbleX + bubbleW / 2, bubbleY + bubbleH / 2 + 1);
-    ctx.restore();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-    const photo = celebrationPhotos[hud.photoIndex] || celebrationPhotos[0];
-    if (photo.loaded) {
-      ctx.drawImage(photo.img, cx - size / 2, cy - size / 2, size, size);
-    } else {
-      ctx.fillStyle = '#444444';
-      ctx.fillRect(cx - size / 2, cy - size / 2, size, size);
-    }
-    ctx.restore();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#ffd23f';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // Collision/success messaging lives in the DOM outcome modal (game.js), not
-  // here — this is just the small persistent speed/steering readout.
+  // Collision/success messaging AND the celebration photo live in the DOM
+  // outcome modal (game.js), not here — this is just the small persistent
+  // speed/steering readout.
   function drawHud(ctx, hud) {
     ctx.save();
     ctx.font = '16px sans-serif';
@@ -258,5 +191,5 @@ Sim.Render = (function () {
     ctx.restore();
   }
 
-  return { renderFrame, getCelebrationPhotoCount };
+  return { renderFrame, getCelebrationPhotoCount, getCelebrationPhotoSrc };
 })();
