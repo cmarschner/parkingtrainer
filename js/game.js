@@ -4,7 +4,7 @@ Sim.Game = (function () {
   const C = Sim.Constants;
 
   let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl;
-  let outcomeModalEl, outcomeBackdropEl, outcomePhotoEl, outcomeMessageEl, outcomeActionsEl;
+  let outcomeModalEl, outcomeBackdropEl, outcomeBubbleEl, outcomePhotoEl, outcomeMessageEl, outcomeActionsEl;
   let screen = 'menu'; // 'menu' | 'game'
   let currentLevel = null;
   let carState = null;
@@ -103,11 +103,13 @@ Sim.Game = (function () {
     // it along with everything else like collision does.
     outcomeBackdropEl.classList.toggle('celebrate', kind === 'success');
     if (kind === 'collision') {
+      outcomeBubbleEl.classList.add('hidden');
       outcomePhotoEl.classList.add('hidden');
       outcomeMessageEl.textContent = '💥 Collision!';
       outcomeActionsEl.appendChild(makeOutcomeButton('Retry', resetLevel));
       outcomeActionsEl.appendChild(makeOutcomeButton('Back to Menu', showMenu, true));
     } else {
+      outcomeBubbleEl.classList.remove('hidden');
       outcomePhotoEl.src = Sim.Render.getCelebrationPhotoSrc(celebrationPhotoIndex);
       outcomePhotoEl.classList.remove('hidden');
       const hasNext = currentLevel.id < Sim.Levels.LEVELS.length;
@@ -213,6 +215,7 @@ Sim.Game = (function () {
 
     outcomeModalEl = document.getElementById('outcome-modal');
     outcomeBackdropEl = document.getElementById('outcome-backdrop');
+    outcomeBubbleEl = document.getElementById('outcome-bubble');
     outcomePhotoEl = document.getElementById('outcome-photo');
     outcomeMessageEl = document.getElementById('outcome-message');
     outcomeActionsEl = document.getElementById('outcome-actions');

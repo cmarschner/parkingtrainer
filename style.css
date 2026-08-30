@@ -296,6 +296,29 @@ button {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
+#outcome-bubble {
+  position: relative;
+  display: inline-block;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+#outcome-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0;
+  border-style: solid;
+  border-color: #ffffff transparent transparent;
+}
+
 #outcome-photo {
   display: block;
   width: 96px;
