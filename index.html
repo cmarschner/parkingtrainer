@@ -17,19 +17,21 @@
     <div class="toolbar-actions">
       <button id="btn-park">Park ⏎</button>
       <button id="btn-reset">Reset ⟲</button>
-      <button id="toggle-view">View: Driver (V)</button>
+      <button id="toggle-view">Driver</button>
     </div>
   </div>
 
-  <canvas id="canvas" width="1000" height="700"></canvas>
+  <div id="canvas-wrap">
+    <canvas id="canvas" width="1000" height="700"></canvas>
 
-  <div id="touch-controls">
-    <div id="wheel-widget" class="touch-widget" role="slider" aria-label="Steering">
-      <div id="wheel-thumb" class="wheel-thumb"></div>
-    </div>
-    <div id="pedal-widget" class="touch-widget" role="slider" aria-label="Throttle and brake">
-      <div class="pedal-track"></div>
-      <div id="pedal-thumb" class="pedal-thumb"></div>
+    <div id="touch-controls">
+      <div id="wheel-widget" class="touch-widget" role="slider" aria-label="Steering">
+        <div id="wheel-thumb" class="wheel-thumb"></div>
+      </div>
+      <div id="pedal-widget" class="touch-widget" role="slider" aria-label="Throttle and brake">
+        <div class="pedal-track"></div>
+        <div id="pedal-thumb" class="pedal-thumb"></div>
+      </div>
     </div>
   </div>
 </div>

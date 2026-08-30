@@ -76,7 +76,7 @@ Sim.Game = (function () {
   function toggleViewMode() {
     if (screen !== 'game') return;
     viewMode = viewMode === 'topdown' ? 'driver' : 'topdown';
-    viewToggleBtn.textContent = viewMode === 'topdown' ? 'View: Top-down (V)' : 'View: Driver (V)';
+    viewToggleBtn.textContent = viewMode === 'topdown' ? 'Top-down' : 'Driver';
   }
 
   function stepPhysicsAndCollision(dt) {

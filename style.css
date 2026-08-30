@@ -141,6 +141,13 @@ button {
   color: #9aa4b2;
 }
 
+#canvas-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0; /* avoid the inline-block whitespace gap under the canvas */
+}
+
 #canvas {
   background: #3a6b35;
   border-radius: 8px;
@@ -149,22 +156,25 @@ button {
   touch-action: none;
 }
 
-/* Touch controls: steering wheel (left) and forward/backward pedal (right).
+/* Touch controls: steering wheel (left) and forward/backward pedal (right),
+   overlaid directly on the canvas (bottom corners) rather than taking up their
+   own row, so the canvas isn't squeezed into less vertical space than it needs.
    Hidden by default — only shown on devices whose primary input is a coarse
    pointer (touchscreens), so desktop/mouse layout is completely unaffected. */
 #touch-controls {
   display: none;
-  width: 1000px;
-  max-width: 100%;
+  position: absolute;
+  inset: 0;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 14px;
-  padding: 0 10px;
+  align-items: flex-end;
+  padding: 0 10px 14px;
   user-select: none;
+  pointer-events: none; /* let the canvas show through everywhere except the two widgets */
 }
 
 .touch-widget {
   touch-action: none;
+  pointer-events: auto;
   position: relative;
   display: flex;
   align-items: center;
@@ -242,8 +252,9 @@ button {
   border: 3px solid #e8e8e8;
 }
 
-/* Phones/tablets: primary input is touch, so show the on-screen controls
-   and drop the keyboard-only hint text that no longer applies. */
+/* Phones/tablets: primary input is touch, so show the on-screen controls,
+   drop the keyboard-only hint text that no longer applies, and shrink the
+   toolbar so its buttons fit on one line instead of wrapping. */
 @media (pointer: coarse) {
   #controls-hint {
     display: none;
@@ -251,5 +262,23 @@ button {
 
   #touch-controls {
     display: flex;
+  }
+
+  #game-screen {
+    padding: 10px;
+  }
+
+  #game-toolbar {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .toolbar-actions {
+    gap: 6px;
+  }
+
+  #back-to-menu, .toolbar-actions button {
+    padding: 8px 10px;
+    font-size: 12px;
   }
 }
