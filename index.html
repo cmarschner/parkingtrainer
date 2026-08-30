@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fahrsim — Parking Practice</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="menu-screen"></div>
+
+<div id="game-screen" class="hidden">
+  <div id="game-toolbar">
+    <button id="back-to-menu">← Back to Menu</button>
+    <div id="controls-hint">Arrows: drive / steer &nbsp;·&nbsp; Enter: confirm parked &nbsp;·&nbsp; R: reset &nbsp;·&nbsp; V: toggle view</div>
+    <button id="toggle-view">View: Top-down (V)</button>
+  </div>
+  <canvas id="canvas" width="1000" height="700"></canvas>
+</div>
+
+<script src="js/constants.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/collision.js"></script>
+<script src="js/tirepaths.js"></script>
+<script src="js/render.js"></script>
+<script src="js/confetti.js"></script>
+<script src="js/input.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
