@@ -9,7 +9,7 @@ Sim.Game = (function () {
   let carState = null;
   let gameState = 'DRIVING'; // 'DRIVING' | 'PARKED_SUCCESS' | 'COLLIDED_FAIL'
   let lastTimestamp = null;
-  let viewMode = 'topdown'; // 'topdown' | 'driver' — persists across level loads within the session
+  let viewMode = 'driver'; // 'topdown' | 'driver' — persists across level loads within the session
   let celebrationPhotoIndex = 0;
 
   function normalizeAngle(a) {
