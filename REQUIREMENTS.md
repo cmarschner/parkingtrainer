@@ -244,9 +244,10 @@ displays instantly instead of flashing empty on first show.
 
 ## Controls
 
-**Keyboard**: Arrow keys (steer/accelerate/brake, hold-to-ramp steering,
-Down-past-standstill reverses), `Enter` (confirm park), `R` (reset), `V`
-(toggle view).
+**Keyboard**: Arrow keys or WASD (`HELD_KEYS` in `input.js` maps both
+`ArrowUp`/`KeyW` etc. to the same `up`/`down`/`left`/`right` booleans — steer/
+accelerate/brake, hold-to-ramp steering, Down/S-past-standstill reverses),
+`Enter` (confirm park), `R` (reset), `V` (toggle view).
 
 **Touch** (phones/tablets — shown via `@media (pointer: coarse)`, so a
 mouse-driven desktop never sees them): a steering wheel widget (left,
