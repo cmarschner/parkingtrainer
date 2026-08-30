@@ -50,8 +50,20 @@ y     += v * sin(theta) * dt
 theta += (v * tan(delta) / L) * dt        // L = wheelbase
 ```
 
-Steering **holds** its angle when no key/drag is active (like a real wheel);
-ramps toward ±MAX_STEER at STEER_RATE while held. Reverse is allowed in **every**
+Steering has two distinct input modes, both handled in `stepSteering`:
+**keyboard** ramps toward ±MAX_STEER at STEER_RATE while a key is held and
+**holds** its angle when released (like a real wheel you turn incrementally
+and let go of). **Touch** (the steering wheel widget) is analog and bypasses
+the ramp entirely: `keys.steerRatio` (-1..1, set by
+`Sim.Input.setSteerRatio`) maps straight to `delta = steerRatio * MAX_STEER`
+every frame, instantly — turning the wheel widget directly turns the wheels,
+matching drag position 1:1. Releasing the widget snaps `steerRatio` to `0`
+(not `null`), which centers the actual steering too — this intentionally
+differs from keyboard's hold-angle behavior, matching the widget's own
+visual spring-back to center. `steerRatio` stays `null` until the wheel is
+first touched, which is what lets keyboard's ramp logic apply on desktop
+(`stepSteering` only takes the analog path when `steerRatio` isn't
+null/undefined). Reverse is allowed in **every**
 level (there used to be a per-level `allowReverse` flag limiting it to parallel
 levels only — removed when the requirement changed to "reverse everywhere";
 don't reintroduce it without checking `tests/sim.test.js`'s reverse-works-in-every-level assertion).
@@ -117,6 +129,17 @@ expected, not a bug to fix.
   being in tolerance.
 - `R` key / on-screen "Reset" button retries from the level's start pose at
   any time.
+- Both outcomes (collision, success) open `#outcome-modal` (see `game.js`'s
+  `showOutcomeModal(kind)`), a DOM dialog, not canvas-drawn text — it must work
+  identically on desktop and mobile without platform-specific wording (no
+  "press R"/"press Enter" — phones have neither key). Collision: message +
+  "Retry" (calls `resetLevel()`) + "Back to Menu". Success: message + "Next
+  Level →" (`loadLevel(currentLevel.id + 1)`, only shown when
+  `currentLevel.id < Sim.Levels.LEVELS.length`) + "Replay" + "Back to Menu".
+  `loadLevel()` always calls `hideOutcomeModal()` first, so every path back
+  into `DRIVING` closes it. `#outcome-modal` is `position: fixed`, which is
+  what lets one implementation center correctly over both the mobile
+  fullscreen layout and the desktop card layout with no separate CSS.
 
 ## Views: top-down vs driver (ego)
 
@@ -162,12 +185,15 @@ Down-past-standstill reverses), `Enter` (confirm park), `R` (reset), `V`
 
 **Touch** (phones/tablets — shown via `@media (pointer: coarse)`, so a
 mouse-driven desktop never sees them): a steering wheel widget (left,
-horizontal drag) and a forward/backward pedal (right, vertical drag), both via
-Pointer Events with independent pointer capture so both can be dragged
-simultaneously with two thumbs. Touch and keyboard key-state are OR'd together
-in `input.js` (`Sim.Input.setTouchKey`) — releasing one can never clobber the
-other. "Park"/"Reset" are also on-screen buttons (usable by mouse click too,
-since phones have no Enter/R keys).
+horizontal drag, **analog** — see the steering section above) and a
+forward/backward pedal (right, vertical drag, digital up/down) via Pointer
+Events with independent pointer capture so both can be dragged simultaneously
+with two thumbs. Touch and keyboard key-state (`up`/`down`/`left`/`right`) are
+OR'd together in `input.js` (`Sim.Input.setTouchKey`) — releasing one can
+never clobber the other; `steerRatio` is separate from that OR'd set (see
+above). "Park"/"Reset" are also on-screen buttons (usable by mouse click too,
+since phones have no Enter/R keys) — but the meaningful post-outcome actions
+(Retry, Next Level, Replay) live in the outcome modal, not the toolbar.
 
 **Mobile requirements** (validated against an emulated iPhone SE, 375×667
 CSS px, DPR 2, portrait): viewport meta tag with `user-scalable=no`, ≥44px tap
@@ -204,7 +230,8 @@ to flow-dependent positioning.
 suite covering `physics.js`, `collision.js`, `levels.js`, `tirepaths.js` — runs
 each core JS file in a `vm` context (no DOM) and asserts on the simulation
 math directly (every level's start pose, wall-collision timing, reverse gear,
-tire-path shape, wheel steering geometry, the guide-lines-pairing design rule).
+tire-path shape, wheel steering geometry, the guide-lines-pairing design rule,
+analog steerRatio behavior including release-centers-to-zero).
 
 **Not covered**: rendering, DOM wiring, `input.js`'s keyboard listeners,
 `touchcontrols.js`, `menu.js`, `game.js`'s state machine. These were verified
