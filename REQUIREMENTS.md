@@ -256,6 +256,6 @@ If DOM/browser coverage becomes worth the weight, that's the gap to fill.
 - No backend, no build tooling, no npm dependencies (the `test` script is
   plain `node`, not a test framework).
 - No analytics, no sound.
-- Repo: `github.com/cmarschner/parkingtrainer`, `main` branch. GitHub Pages (if
+- Repo: `github.com/cmarschner/parking-practice`, `main` branch. GitHub Pages (if
   enabled) serves this directory's `index.html` at its root — don't rename it
   or move it into a subdirectory.
