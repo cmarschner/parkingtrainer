@@ -172,9 +172,31 @@ since phones have no Enter/R keys).
 **Mobile requirements** (validated against an emulated iPhone SE, 375×667
 CSS px, DPR 2, portrait): viewport meta tag with `user-scalable=no`, ≥44px tap
 targets, `touch-action: manipulation` on buttons to kill the 300ms tap delay,
-no horizontal overflow anywhere (menu grid included — watch for `min-width:
-auto` on grid items with long text forcing overflow; fixed once already via
-`min-width: 0` on `.level-tile` + a 2-column layout under 480px).
+`text-size-adjust: 100%` globally (stops mobile browsers auto-inflating text,
+which was silently growing the toolbar and dragging the touch controls out of
+position), no horizontal overflow anywhere (menu grid included — watch for
+`min-width: auto` on grid items with long text forcing overflow; fixed once
+already via `min-width: 0` on `.level-tile` + a 2-column layout under 480px).
+
+**The mobile game screen is a fullscreen app shell, not a scaled-down box.**
+Under `@media (pointer: coarse)`, `#game-screen`/`#canvas-wrap`/`#game-toolbar`
+all switch to `position: fixed`. `resizeCanvas()` in `game.js` sets the
+canvas's actual resolution to `window.innerWidth/innerHeight * devicePixelRatio`
+(with a matching `ctx.setTransform` for crisp high-DPI rendering) so the
+canvas genuinely fills the device screen — desktop keeps the fixed 1000×700
+native resolution untouched, scaled by CSS as before. The toolbar floats as a
+translucent bar over the top of the canvas; `buildHud()` measures the
+toolbar's real height (`getBoundingClientRect()`) and passes it as
+`hud.topInset` so in-canvas HUD text and the celebration overlay
+(`extraTopClearance` in `drawCelebration`) never render underneath it. The
+touch widgets are pinned to the fixed canvas wrapper, not flow-positioned —
+this was a real bug once (toolbar height changes, from any cause, could push
+the wheel/pedal off-screen or out of the viewport) and is now structurally
+impossible since nothing here depends on document flow or text metrics.
+If you touch this layout, the regression check that matters: force the
+toolbar's height way up (e.g. inject a huge `font-size` on its buttons) and
+confirm the touch widgets don't move — if they do, something regressed back
+to flow-dependent positioning.
 
 ## Testing
 
