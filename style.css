@@ -154,13 +154,14 @@ button {
   margin-bottom: 10px;
 }
 
-.toolbar-actions {
+.toolbar-left {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 8px 16px;
 }
 
-#back-to-menu, .toolbar-actions button {
+.toolbar-btn {
   background: #262b33;
   border: 1px solid #3a4048;
   color: #eaeaea;
@@ -172,13 +173,46 @@ button {
   font-size: 14px;
 }
 
-#back-to-menu:hover, .toolbar-actions button:hover {
+.toolbar-btn:hover {
   border-color: #2f6fed;
 }
 
 #controls-hint {
   font-size: 13px;
   color: #9aa4b2;
+}
+
+/* Park is the one button whose availability actually changes as you drive —
+   dim and inert until the car is stopped and aligned, then it lights up so
+   there's no ambiguity about when confirming will actually do anything.
+   Kept separate from the toolbar-btn group and pinned to the far right so it
+   isn't lost among buttons that are always equally clickable. */
+#btn-park {
+  background: #262b33;
+  border: 1px solid #3a4048;
+  color: #6b7280;
+  padding: 10px 20px;
+  min-height: 44px;
+  border-radius: 6px;
+  cursor: not-allowed;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+#btn-park.ready {
+  background: #4ade80;
+  border-color: #4ade80;
+  color: #0b1f14;
+  opacity: 1;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.25);
+}
+
+#btn-park.ready:hover {
+  filter: brightness(1.08);
 }
 
 #canvas-wrap {
@@ -496,12 +530,17 @@ button {
     padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 8px calc(8px + env(safe-area-inset-left));
   }
 
-  .toolbar-actions {
+  .toolbar-left {
     gap: 6px;
   }
 
-  #back-to-menu, .toolbar-actions button {
+  .toolbar-btn {
     padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  #btn-park {
+    padding: 8px 16px;
     font-size: 12px;
   }
 

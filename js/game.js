@@ -3,7 +3,7 @@ window.Sim = window.Sim || {};
 Sim.Game = (function () {
   const C = Sim.Constants;
 
-  let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl;
+  let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl, btnParkEl;
   let outcomeModalEl, outcomeBackdropEl, outcomeBubbleEl, outcomePhotoEl, outcomeMessageEl, outcomeStatsEl, outcomeActionsEl;
   let screen = 'menu'; // 'menu' | 'game'
   let currentLevel = null;
@@ -62,6 +62,10 @@ Sim.Game = (function () {
     const dist = Math.hypot(carRect.cx - target.rect.cx, carRect.cy - target.rect.cy);
     const headingDiff = Math.abs(normalizeAngle(state.theta - target.targetHeading));
     return dist <= C.POSITION_TOLERANCE && headingDiff <= C.HEADING_TOLERANCE;
+  }
+
+  function canConfirmPark() {
+    return gameState === 'DRIVING' && isStopped(carState) && isAligned(carState, currentLevel);
   }
 
   function isStopped(state) {
@@ -221,8 +225,8 @@ Sim.Game = (function () {
   }
 
   function handleEnter() {
-    if (screen !== 'game' || gameState !== 'DRIVING') return;
-    if (isStopped(carState) && isAligned(carState, currentLevel)) {
+    if (screen !== 'game') return;
+    if (canConfirmPark()) {
       gameState = 'PARKED_SUCCESS';
       Sim.Menu.markCompleted(currentLevel.id);
       celebrationPhotoIndex = Math.floor(Math.random() * Sim.Render.getCelebrationPhotoCount());
@@ -297,7 +301,7 @@ Sim.Game = (function () {
       }
     }
 
-    if (gameState === 'DRIVING' && isStopped(carState) && isAligned(carState, currentLevel)) {
+    if (canConfirmPark()) {
       lines.push('Aligned — confirm to park');
     }
 
@@ -310,6 +314,9 @@ Sim.Game = (function () {
   }
 
   function render() {
+    const ready = canConfirmPark();
+    btnParkEl.classList.toggle('ready', ready);
+    btnParkEl.disabled = !ready;
     Sim.Render.renderFrame(ctx, currentLevel, carState, buildHud(), viewMode);
     Sim.Confetti.draw(ctx);
   }
@@ -347,7 +354,8 @@ Sim.Game = (function () {
     outcomeActionsEl = document.getElementById('outcome-actions');
 
     document.getElementById('back-to-menu').addEventListener('click', showMenu);
-    document.getElementById('btn-park').addEventListener('click', handleEnter);
+    btnParkEl = document.getElementById('btn-park');
+    btnParkEl.addEventListener('click', handleEnter);
     document.getElementById('btn-reset').addEventListener('click', handleReset);
 
     viewToggleBtn = document.getElementById('toggle-view');
