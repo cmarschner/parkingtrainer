@@ -4,7 +4,7 @@ Sim.Game = (function () {
   const C = Sim.Constants;
 
   let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl;
-  let outcomeModalEl, outcomeMessageEl, outcomeActionsEl;
+  let outcomeModalEl, outcomeBackdropEl, outcomeMessageEl, outcomeActionsEl;
   let screen = 'menu'; // 'menu' | 'game'
   let currentLevel = null;
   let carState = null;
@@ -99,6 +99,9 @@ Sim.Game = (function () {
 
   function showOutcomeModal(kind) {
     outcomeActionsEl.innerHTML = '';
+    // Success keeps the confetti/celebration photo visible behind the modal
+    // instead of dimming them along with everything else like collision does.
+    outcomeBackdropEl.classList.toggle('celebrate', kind === 'success');
     if (kind === 'collision') {
       outcomeMessageEl.textContent = '💥 Collision!';
       outcomeActionsEl.appendChild(makeOutcomeButton('Retry', resetLevel));
@@ -206,6 +209,7 @@ Sim.Game = (function () {
     ctx = canvas.getContext('2d');
 
     outcomeModalEl = document.getElementById('outcome-modal');
+    outcomeBackdropEl = document.getElementById('outcome-backdrop');
     outcomeMessageEl = document.getElementById('outcome-message');
     outcomeActionsEl = document.getElementById('outcome-actions');
 

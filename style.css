@@ -278,6 +278,12 @@ button {
   background: rgba(0, 0, 0, 0.62);
 }
 
+/* Success keeps the confetti/celebration photo visible instead of dimming
+   them along with everything else — collision still darkens the screen. */
+#outcome-backdrop.celebrate {
+  background: rgba(0, 0, 0, 0.15);
+}
+
 #outcome-panel {
   position: relative;
   background: #262b33;
