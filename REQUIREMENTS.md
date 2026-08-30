@@ -167,15 +167,23 @@ originally; moved per explicit request).
 
 ## Celebration on success
 
-Confetti (screen-space particle system, `confetti.js`) + a random photo from
-`pics/` in a circular frame + a "Well done!" speech bubble
-(`drawCelebration()` in `render.js`). The photo pool is
-`CELEBRATION_PHOTO_SOURCES` in `render.js` — **update this array (with the
-`pics/` prefix) whenever photos are added or reorganized**;
-`Sim.Render.getCelebrationPhotoCount()` is the single source of truth
-`game.js` reads from, so nothing else needs to know the count. A photo is
-picked once per park (not re-randomized every frame) and threaded through
-`hud.photoIndex`.
+Confetti (screen-space particle system, `confetti.js`, canvas-drawn since it's
+animated) + a random photo from `pics/` shown inside the outcome modal itself
+(`<img id="outcome-photo">`, set via `Sim.Render.getCelebrationPhotoSrc(index)`
+in `showOutcomeModal('success')`) — **not** drawn on the canvas. It used to be
+a canvas-drawn photo+speech-bubble in a fixed corner (`drawCelebration()`),
+but that overlay competed for screen space with the separate DOM modal
+overlay and lost on small screens (the modal's panel is tall enough on
+mobile to cover a fixed-position canvas photo). Moving the photo into the
+modal panel itself removes that conflict by construction — there's no fixed
+pixel position to defend, it just flows in the panel like any other DOM
+content. The photo pool is `CELEBRATION_PHOTO_SOURCES` in `render.js` —
+**update this array (with the `pics/` prefix) whenever photos are added or
+reorganized**; `Sim.Render.getCelebrationPhotoCount()` is the single source
+of truth `game.js` reads from to pick a random index, so nothing else needs
+to know the count. `render.js` still preloads every photo into an `Image()`
+at load time purely to warm the browser cache, so the modal's `<img>`
+displays instantly instead of flashing empty on first show.
 
 ## Controls
 
@@ -213,8 +221,9 @@ canvas genuinely fills the device screen — desktop keeps the fixed 1000×700
 native resolution untouched, scaled by CSS as before. The toolbar floats as a
 translucent bar over the top of the canvas; `buildHud()` measures the
 toolbar's real height (`getBoundingClientRect()`) and passes it as
-`hud.topInset` so in-canvas HUD text and the celebration overlay
-(`extraTopClearance` in `drawCelebration`) never render underneath it. The
+`hud.topInset` so the in-canvas speed/steering HUD text never renders
+underneath it (the celebration photo doesn't need this — it lives in the
+DOM outcome modal now, not the canvas; see "Celebration on success" above). The
 touch widgets are pinned to the fixed canvas wrapper, not flow-positioned —
 this was a real bug once (toolbar height changes, from any cause, could push
 the wheel/pedal off-screen or out of the viewport) and is now structurally
