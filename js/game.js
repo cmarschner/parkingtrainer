@@ -138,7 +138,13 @@ Sim.Game = (function () {
 
     if (navigator.share) {
       const btn = makeOutcomeButton('Share Results', () => {
-        navigator.share({ text, url: SHARE_URL }).catch(() => {}); // user cancelling the share sheet throws — ignore
+        // Some share targets (mostly desktop OS share-sheet extensions, e.g.
+        // macOS) only read `text` and silently drop a separate `url` field —
+        // embedding the link in the text itself guarantees it travels along
+        // no matter which field the receiving app actually looks at. `url`
+        // is still passed too, for targets that use it to build a rich link
+        // preview card instead of showing raw text.
+        navigator.share({ text: `${text}\n${SHARE_URL}`, url: SHARE_URL }).catch(() => {}); // user cancelling the share sheet throws — ignore
       });
       container.appendChild(btn);
       return container;
