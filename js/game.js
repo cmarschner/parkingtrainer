@@ -3,7 +3,7 @@ window.Sim = window.Sim || {};
 Sim.Game = (function () {
   const C = Sim.Constants;
 
-  let ctx, menuScreen, gameScreen, canvas, viewToggleBtn;
+  let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl;
   let screen = 'menu'; // 'menu' | 'game'
   let currentLevel = null;
   let carState = null;
@@ -11,6 +11,35 @@ Sim.Game = (function () {
   let lastTimestamp = null;
   let viewMode = 'driver'; // 'topdown' | 'driver' — persists across level loads within the session
   let celebrationPhotoIndex = 0;
+  const MOBILE_QUERY = window.matchMedia('(pointer: coarse)');
+
+  // On touch devices the canvas fills the actual viewport (see the CSS
+  // position:fixed layout under @media (pointer: coarse)); on desktop it
+  // keeps its fixed 1000x700 native resolution, scaled down by CSS as before.
+  function resizeCanvas() {
+    if (!MOBILE_QUERY.matches) {
+      if (C.CANVAS_WIDTH !== 1000 || C.CANVAS_HEIGHT !== 700) {
+        canvas.width = 1000;
+        canvas.height = 700;
+        canvas.style.width = '';
+        canvas.style.height = '';
+        C.CANVAS_WIDTH = 1000;
+        C.CANVAS_HEIGHT = 700;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      return;
+    }
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    C.CANVAS_WIDTH = w;
+    C.CANVAS_HEIGHT = h;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 
   function normalizeAngle(a) {
     while (a > Math.PI) a -= 2 * Math.PI;
@@ -115,7 +144,12 @@ Sim.Game = (function () {
       celebrate = true;
     }
 
-    return { lines, message, messageColor, celebrate, photoIndex: celebrationPhotoIndex };
+    // On the mobile fullscreen layout the toolbar floats over the canvas, so
+    // HUD text needs to start below it. Measure the real height rather than
+    // guessing a constant — stays correct regardless of text-size settings.
+    const topInset = MOBILE_QUERY.matches ? gameToolbarEl.getBoundingClientRect().height + 8 : 12;
+
+    return { lines, message, messageColor, celebrate, photoIndex: celebrationPhotoIndex, topInset };
   }
 
   function render() {
@@ -143,6 +177,7 @@ Sim.Game = (function () {
   function init() {
     menuScreen = document.getElementById('menu-screen');
     gameScreen = document.getElementById('game-screen');
+    gameToolbarEl = document.getElementById('game-toolbar');
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
 
@@ -155,6 +190,10 @@ Sim.Game = (function () {
 
     Sim.Input.init({ onEnter: handleEnter, onReset: handleReset, onToggleView: toggleViewMode });
     Sim.TouchControls.init();
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    MOBILE_QUERY.addEventListener('change', resizeCanvas);
 
     showMenu();
     requestAnimationFrame(loop);

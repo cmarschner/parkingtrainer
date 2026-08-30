@@ -200,8 +200,10 @@ Sim.Render = (function () {
     if (!hud.celebrate) return;
 
     const size = 140, margin = 20;
+    // Pushed further down when a floating toolbar (mobile) eats into the top of the canvas.
+    const extraTopClearance = Math.max(0, (hud.topInset ?? 12) - 12);
     const cx = C.CANVAS_WIDTH - margin - size / 2;
-    const cy = margin + size; // photo + bubble pulled down by size/2 so the bubble stays on-screen
+    const cy = margin + size + extraTopClearance; // photo + bubble pulled down by size/2 so the bubble stays on-screen
 
     const text = 'Well done!';
     ctx.save();
@@ -246,7 +248,7 @@ Sim.Render = (function () {
     ctx.font = '16px sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textBaseline = 'top';
-    let y = 12;
+    let y = hud.topInset ?? 12;
     hud.lines.forEach((line) => {
       ctx.fillText(line, 12, y);
       y += 22;
