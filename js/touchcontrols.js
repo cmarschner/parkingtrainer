@@ -44,21 +44,24 @@ Sim.TouchControls = (function () {
     el.addEventListener('pointercancel', end);
   }
 
+  // Analog: the wheel's drag position maps directly to the front-wheel angle
+  // (Sim.Input.setSteerRatio), not to a left/right ramp — turning the wheel
+  // further turns the actual wheels further, immediately. Releasing snaps
+  // back to center (ratio 0), matching the widget's own spring-back visual.
   function setupWheel(el, thumb) {
-    const RADIUS = 50, DEADZONE = 10, MAX_VISUAL_DEG = 75;
+    const RADIUS = 50, DEADZONE = 4, MAX_VISUAL_DEG = 75;
     setupDragWidget(el, thumb, {
       axis: 'x',
       radius: RADIUS,
       deadzone: DEADZONE,
       onChange(dx) {
         thumb.style.transform = `rotate(${(dx / RADIUS) * MAX_VISUAL_DEG}deg)`;
-        Sim.Input.setTouchKey('left', dx < -DEADZONE);
-        Sim.Input.setTouchKey('right', dx > DEADZONE);
+        const clamped = Math.abs(dx) < DEADZONE ? 0 : dx;
+        Sim.Input.setSteerRatio(clamp(-clamped / RADIUS, -1, 1));
       },
       onRelease() {
         thumb.style.transform = 'rotate(0deg)';
-        Sim.Input.setTouchKey('left', false);
-        Sim.Input.setTouchKey('right', false);
+        Sim.Input.setSteerRatio(0);
       },
     });
   }

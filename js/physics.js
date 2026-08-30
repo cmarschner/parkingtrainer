@@ -26,8 +26,16 @@ Sim.Physics = (function () {
     };
   }
 
-  // Ramp steering angle toward the held direction; holds its value when released.
+  // keys.steerRatio (-1..1, or null when not in use) is an analog override from
+  // the touch steering wheel: the wheel's drag position maps directly to the
+  // actual front-wheel angle, no ramping — turning the wheel IS turning the
+  // wheels. Keyboard input (steerRatio left null) keeps the ramped hold-angle
+  // behavior of a real wheel you turn incrementally and let go of.
   function stepSteering(state, keys, dt) {
+    if (keys.steerRatio !== null && keys.steerRatio !== undefined) {
+      state.delta = keys.steerRatio * C.MAX_STEER;
+      return;
+    }
     if (keys.left && !keys.right) {
       state.delta = Math.min(C.MAX_STEER, state.delta + C.STEER_RATE * dt);
     } else if (keys.right && !keys.left) {

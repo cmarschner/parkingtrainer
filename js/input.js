@@ -4,7 +4,7 @@ Sim.Input = (function () {
   // `keys` is the single source physics reads from each frame. Keyboard and touch
   // controls each report into their own set, and every change recomputes `keys` as
   // the OR of both — so a touch release can never clobber a keyboard hold or vice versa.
-  const keys = { up: false, down: false, left: false, right: false };
+  const keys = { up: false, down: false, left: false, right: false, steerRatio: null };
   const keyboardKeys = { up: false, down: false, left: false, right: false };
   const touchKeys = { up: false, down: false, left: false, right: false };
   const HELD_KEYS = {
@@ -24,6 +24,12 @@ Sim.Input = (function () {
   function setTouchKey(name, value) {
     touchKeys[name] = value;
     recompute();
+  }
+
+  // Analog override from the touch steering wheel: -1..1, or null when the
+  // wheel has never been touched (keyboard ramp-steering applies instead).
+  function setSteerRatio(ratio) {
+    keys.steerRatio = ratio;
   }
 
   function init({ onEnter, onReset, onToggleView } = {}) {
@@ -56,8 +62,9 @@ Sim.Input = (function () {
   function reset() {
     keyboardKeys.up = keyboardKeys.down = keyboardKeys.left = keyboardKeys.right = false;
     touchKeys.up = touchKeys.down = touchKeys.left = touchKeys.right = false;
+    keys.steerRatio = null;
     recompute();
   }
 
-  return { keys, init, reset, setTouchKey };
+  return { keys, init, reset, setTouchKey, setSteerRatio };
 })();

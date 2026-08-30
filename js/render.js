@@ -243,6 +243,8 @@ Sim.Render = (function () {
     ctx.restore();
   }
 
+  // Collision/success messaging lives in the DOM outcome modal (game.js), not
+  // here — this is just the small persistent speed/steering readout.
   function drawHud(ctx, hud) {
     ctx.save();
     ctx.font = '16px sans-serif';
@@ -253,12 +255,6 @@ Sim.Render = (function () {
       ctx.fillText(line, 12, y);
       y += 22;
     });
-    if (hud.message) {
-      ctx.font = 'bold 28px sans-serif';
-      ctx.fillStyle = hud.messageColor || '#ffffff';
-      const metrics = ctx.measureText(hud.message);
-      ctx.fillText(hud.message, (C.CANVAS_WIDTH - metrics.width) / 2, C.CANVAS_HEIGHT - 60);
-    }
     ctx.restore();
   }
 

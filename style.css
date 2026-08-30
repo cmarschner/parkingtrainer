@@ -258,6 +258,73 @@ button {
   border: 3px solid #e8e8e8;
 }
 
+/* Outcome modal: collision ("Retry") and parked-success ("Next Level") both
+   go through this one dialog. position:fixed centers it over whatever's on
+   screen regardless of platform — no separate mobile/desktop layout needed,
+   and it sits above the toolbar/touch-controls on both. */
+#outcome-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#outcome-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+#outcome-panel {
+  position: relative;
+  background: #262b33;
+  border: 1px solid #3a4048;
+  border-radius: 14px;
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+#outcome-message {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 22px;
+  line-height: 1.3;
+}
+
+#outcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#outcome-actions button {
+  min-height: 48px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #3a4048;
+  background: #2f6fed;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#outcome-actions button:hover {
+  filter: brightness(1.1);
+}
+
+#outcome-actions button.secondary {
+  background: #1b1f24;
+  color: #eaeaea;
+}
+
 /* Phones/tablets: primary input is touch. The canvas becomes a genuine
    full-viewport app screen (position:fixed, JS sizes its resolution to
    window.innerWidth/innerHeight — see resizeCanvas() in game.js) instead of

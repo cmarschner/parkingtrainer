@@ -4,6 +4,7 @@ Sim.Game = (function () {
   const C = Sim.Constants;
 
   let ctx, menuScreen, gameScreen, canvas, viewToggleBtn, gameToolbarEl;
+  let outcomeModalEl, outcomeMessageEl, outcomeActionsEl;
   let screen = 'menu'; // 'menu' | 'game'
   let currentLevel = null;
   let carState = null;
@@ -79,12 +80,43 @@ Sim.Game = (function () {
     lastTimestamp = null;
     Sim.Input.reset();
     Sim.Confetti.clear();
+    hideOutcomeModal();
     showGame();
   }
 
   function resetLevel() {
     if (!currentLevel) return;
     loadLevel(currentLevel.id);
+  }
+
+  function makeOutcomeButton(label, onClick, secondary) {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    if (secondary) btn.classList.add('secondary');
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function showOutcomeModal(kind) {
+    outcomeActionsEl.innerHTML = '';
+    if (kind === 'collision') {
+      outcomeMessageEl.textContent = '💥 Collision!';
+      outcomeActionsEl.appendChild(makeOutcomeButton('Retry', resetLevel));
+      outcomeActionsEl.appendChild(makeOutcomeButton('Back to Menu', showMenu, true));
+    } else {
+      const hasNext = currentLevel.id < Sim.Levels.LEVELS.length;
+      outcomeMessageEl.textContent = hasNext ? '🎉 Parked!' : "🎉 Parked! You've completed every level!";
+      if (hasNext) {
+        outcomeActionsEl.appendChild(makeOutcomeButton('Next Level →', () => loadLevel(currentLevel.id + 1)));
+      }
+      outcomeActionsEl.appendChild(makeOutcomeButton('Replay', resetLevel, hasNext));
+      outcomeActionsEl.appendChild(makeOutcomeButton('Back to Menu', showMenu, true));
+    }
+    outcomeModalEl.classList.remove('hidden');
+  }
+
+  function hideOutcomeModal() {
+    outcomeModalEl.classList.add('hidden');
   }
 
   function handleEnter() {
@@ -94,6 +126,7 @@ Sim.Game = (function () {
       Sim.Menu.markCompleted(currentLevel.id);
       celebrationPhotoIndex = Math.floor(Math.random() * Sim.Render.getCelebrationPhotoCount());
       Sim.Confetti.spawn();
+      showOutcomeModal('success');
     }
   }
 
@@ -119,6 +152,7 @@ Sim.Game = (function () {
     if (hit) {
       gameState = 'COLLIDED_FAIL';
       carState.v = 0;
+      showOutcomeModal('collision');
     }
   }
 
@@ -131,17 +165,7 @@ Sim.Game = (function () {
       `Steering: ${steerDeg}°`,
     ];
     if (gameState === 'DRIVING' && isStopped(carState) && isAligned(carState, currentLevel)) {
-      lines.push('Aligned — press Enter to park');
-    }
-
-    let message = null, messageColor = null, celebrate = false;
-    if (gameState === 'COLLIDED_FAIL') {
-      message = 'Collision! Press R to retry';
-      messageColor = '#ff5c5c';
-    } else if (gameState === 'PARKED_SUCCESS') {
-      message = 'Parked! Press R to replay, or Back to Menu';
-      messageColor = '#4ade80';
-      celebrate = true;
+      lines.push('Aligned — confirm to park');
     }
 
     // On the mobile fullscreen layout the toolbar floats over the canvas, so
@@ -149,7 +173,7 @@ Sim.Game = (function () {
     // guessing a constant — stays correct regardless of text-size settings.
     const topInset = MOBILE_QUERY.matches ? gameToolbarEl.getBoundingClientRect().height + 8 : 12;
 
-    return { lines, message, messageColor, celebrate, photoIndex: celebrationPhotoIndex, topInset };
+    return { lines, celebrate: gameState === 'PARKED_SUCCESS', photoIndex: celebrationPhotoIndex, topInset };
   }
 
   function render() {
@@ -180,6 +204,10 @@ Sim.Game = (function () {
     gameToolbarEl = document.getElementById('game-toolbar');
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
+
+    outcomeModalEl = document.getElementById('outcome-modal');
+    outcomeMessageEl = document.getElementById('outcome-message');
+    outcomeActionsEl = document.getElementById('outcome-actions');
 
     document.getElementById('back-to-menu').addEventListener('click', showMenu);
     document.getElementById('btn-park').addEventListener('click', handleEnter);

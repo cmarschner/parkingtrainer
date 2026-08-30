@@ -164,4 +164,23 @@ for (const spec of Sim.Levels.LEVELS) {
   assert(Math.abs(fl.angle - state.delta) < 1e-9, 'front wheel angle picks up the steering angle');
 }
 
+// --- Analog steering (touch wheel): keys.steerRatio maps directly to the wheel
+// angle with no ramping, and null falls back to the keyboard's ramped hold-angle. ---
+{
+  const state = Sim.Physics.createCarState({ x: 0, y: 0, theta: 0 });
+  Sim.Physics.stepSteering(state, { steerRatio: 0.5 }, 1 / 60);
+  assert(Math.abs(state.delta - 0.5 * C.MAX_STEER) < 1e-9, 'steerRatio 0.5 sets delta to exactly half of MAX_STEER, instantly');
+
+  Sim.Physics.stepSteering(state, { steerRatio: -1 }, 1 / 60);
+  assert(Math.abs(state.delta - -C.MAX_STEER) < 1e-9, 'steerRatio -1 sets delta to -MAX_STEER instantly, no ramp');
+
+  Sim.Physics.stepSteering(state, { steerRatio: 0 }, 1 / 60);
+  assert(state.delta === 0, 'steerRatio 0 centers the wheel instantly (matches the widget snapping back on release)');
+
+  // null (never touched the analog wheel) falls back to the keyboard ramp.
+  const kbState = Sim.Physics.createCarState({ x: 0, y: 0, theta: 0 });
+  Sim.Physics.stepSteering(kbState, { steerRatio: null, left: true, right: false }, 1 / 60);
+  assert(kbState.delta > 0 && kbState.delta < C.MAX_STEER, 'steerRatio null uses the keyboard ramp instead of an instant jump');
+}
+
 console.log(`sim.test.js: ${passCount} assertions passed.`);
