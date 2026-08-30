@@ -409,6 +409,38 @@ button {
   color: #eaeaea;
 }
 
+/* Fallback for browsers without the Web Share API (mostly desktop) —
+   direct share-intent links for the three platforms, shown as a row of
+   small pills instead of one of the big stacked action buttons. */
+.share-label {
+  font-size: 13px;
+  color: #9aa4b2;
+  margin-bottom: 8px;
+}
+
+.share-links {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.share-link {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: #1b1f24;
+  border: 1px solid #3a4048;
+  color: #eaeaea;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.share-link:hover {
+  border-color: #2f6fed;
+}
+
 /* Phones/tablets: primary input is touch. The canvas becomes a genuine
    full-viewport app screen (position:fixed, JS sizes its resolution to
    window.innerWidth/innerHeight — see resizeCanvas() in game.js) instead of

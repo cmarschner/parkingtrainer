@@ -15,7 +15,12 @@ Sim.Game = (function () {
   let gameMode = 'practice'; // 'practice' | 'challenge' — chosen in the menu, applies to the next level loaded
   let challengeStats = null; // { collisions, startTime } while a challenge attempt is running, else null
   let collisionFlashUntil = 0; // performance.now() timestamp; HUD shows a brief collision notice until then
+  // Cumulative totals across an unbroken Challenge run from level 1 through
+  // the last level, via "Next Level" only — null whenever that chain isn't
+  // (or isn't yet) intact, which is what gates the final share offer.
+  let runStats = null; // { totalTimeMs, totalCollisions }
   const MOBILE_QUERY = window.matchMedia('(pointer: coarse)');
+  const SHARE_URL = 'https://cmarschner.github.io/parking-practice/';
 
   // On touch devices the canvas fills the actual viewport (see the CSS
   // position:fixed layout under @media (pointer: coarse)); on desktop it
@@ -81,7 +86,7 @@ Sim.Game = (function () {
     gameScreen.classList.remove('hidden');
   }
 
-  function loadLevel(id) {
+  function loadLevel(id, { continuing } = {}) {
     currentLevel = Sim.Levels.buildLevel(id);
     carState = Sim.Physics.createCarState(currentLevel.startPose);
     gameState = 'DRIVING';
@@ -91,6 +96,15 @@ Sim.Game = (function () {
     hideOutcomeModal();
     challengeStats = gameMode === 'challenge' ? { collisions: 0, startTime: performance.now() } : null;
     collisionFlashUntil = 0;
+
+    if (gameMode !== 'challenge') {
+      runStats = null;
+    } else if (id === 1) {
+      runStats = { totalTimeMs: 0, totalCollisions: 0 }; // starting level 1 always begins a fresh run
+    } else if (!continuing) {
+      runStats = null; // jumped in mid-sequence — no complete 1..N record to report
+    } // else: continuing===true from "Next Level" — runStats (already updated in handleEnter) carries over
+
     showGame();
   }
 
@@ -105,6 +119,55 @@ Sim.Game = (function () {
     if (secondary) btn.classList.add('secondary');
     btn.addEventListener('click', onClick);
     return btn;
+  }
+
+  function buildShareText(stats) {
+    const seconds = (stats.totalTimeMs / 1000).toFixed(1);
+    const n = stats.totalCollisions;
+    return `I parked my way through all 8 levels of Parking Practice in ${seconds}s with ${n} collision${n === 1 ? '' : 's'}! 🚗 Can you beat that?`;
+  }
+
+  // Web Share API opens the OS's native share sheet (X/Facebook/WhatsApp/etc.
+  // appear there if installed) — the best UX, and what most mobile browsers
+  // support. Desktop browsers mostly don't implement it, so there we fall
+  // back to direct share-intent links for the three platforms asked for.
+  function buildShareControls(stats) {
+    const text = buildShareText(stats);
+    const container = document.createElement('div');
+    container.id = 'outcome-share';
+
+    if (navigator.share) {
+      const btn = makeOutcomeButton('Share Results', () => {
+        navigator.share({ text, url: SHARE_URL }).catch(() => {}); // user cancelling the share sheet throws — ignore
+      });
+      container.appendChild(btn);
+      return container;
+    }
+
+    const label = document.createElement('div');
+    label.className = 'share-label';
+    label.textContent = 'Share your result:';
+    container.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'share-links';
+    const encodedText = encodeURIComponent(text);
+    const encodedUrl = encodeURIComponent(SHARE_URL);
+    [
+      ['X', `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`],
+      ['Facebook', `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`],
+      ['WhatsApp', `https://wa.me/?text=${encodedText}%20${encodedUrl}`],
+    ].forEach(([label, href]) => {
+      const a = document.createElement('a');
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = label;
+      a.className = 'share-link';
+      row.appendChild(a);
+    });
+    container.appendChild(row);
+    return container;
   }
 
   function showOutcomeModal(kind, challengeResult) {
@@ -137,9 +200,11 @@ Sim.Game = (function () {
       }
 
       if (hasNext) {
-        outcomeActionsEl.appendChild(makeOutcomeButton('Next Level →', () => loadLevel(currentLevel.id + 1)));
+        outcomeActionsEl.appendChild(makeOutcomeButton('Next Level →', () => loadLevel(currentLevel.id + 1, { continuing: true })));
+      } else if (runStats) {
+        outcomeActionsEl.appendChild(buildShareControls(runStats));
       }
-      outcomeActionsEl.appendChild(makeOutcomeButton('Replay', resetLevel, hasNext));
+      outcomeActionsEl.appendChild(makeOutcomeButton('Replay', resetLevel, hasNext || !!runStats));
       outcomeActionsEl.appendChild(makeOutcomeButton('Back to Menu', showMenu, true));
     }
     outcomeModalEl.classList.remove('hidden');
@@ -162,6 +227,10 @@ Sim.Game = (function () {
         const timeMs = performance.now() - challengeStats.startTime;
         const { isNewBest, best } = Sim.Menu.recordChallengeResult(currentLevel.id, challengeStats.collisions, timeMs);
         challengeResult = { timeMs, collisions: challengeStats.collisions, isNewBest, best };
+        if (runStats) {
+          runStats.totalTimeMs += timeMs;
+          runStats.totalCollisions += challengeStats.collisions;
+        }
       }
       showOutcomeModal('success', challengeResult);
     }
